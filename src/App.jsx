@@ -80,13 +80,10 @@ const App = () => {
 
   const loadTrendingMovies = async () =>{
     try{
-      console.log('Loading trending movies...');
       const movies = await getTrendigMovies();
-      console.log('Trending movies loaded:', movies);
-      setTrendingMovies(movies || []);
+      setTrendingMovies(movies);
     } catch (error){
       console.error("Error loading trending movies:", error)
-      setTrendingMovies([]);
     }
   }
 
@@ -115,7 +112,7 @@ const App = () => {
             <h2>Trending Movies</h2>
             <ul>
               { trendingMovies.map((movie, index) => (
-                <li key={movie.$id || index}>
+                <li key={movie.$id}>
                   <p>{index + 1}</p>
                   <img 
                     src={movie.poster_url} 
@@ -129,7 +126,7 @@ const App = () => {
         )}
 
         <section className="all-movies">
-          <h2>all movies</h2>
+          <h2>All movies</h2>
           { isLoading ? (
               <Spinner />
             ) 

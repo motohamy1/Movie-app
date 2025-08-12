@@ -48,21 +48,11 @@ export const updateSearchCount = async (searchTerm, movie)=>{
 }
 
 export const getTrendigMovies = async () =>{
-    console.log('getTrendigMovies called, database available:', !!database);
-    
-    if (!database) {
-        console.log('Database not initialized, returning empty array');
-        return [];
-    }
-    
     try{
-        console.log('Fetching documents from Appwrite...');
         const result = await database.listDocuments(DATABASE_ID, COLLECTION_ID, [
             Query.limit(10),
             Query.orderDesc('count')
         ])
-        console.log('Appwrite response:', result);
-        console.log('Documents found:', result.documents?.length || 0);
         return result.documents;
     } catch(error){
         console.error('Error in getTrendigMovies:', error)
