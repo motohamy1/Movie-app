@@ -4,12 +4,19 @@ const PROJECT_ID= import.meta.env.VITE_APPWRITE_PROJECT_ID
 const DATABASE_ID= import.meta.env.VITE_APPWRITE_DATABASE_ID
 const COLLECTION_ID= import.meta.env.VITE_APPWRITE_COLLECTION_ID
 
-const client = new Client()
-    .setEndpoint('https://fra.cloud.appwrite.io/v1')
-    .setProject(PROJECT_ID)
+let client, database;
 
-const database = new Databases(client)
+if (PROJECT_ID && DATABASE_ID && COLLECTION_ID) {
+  client = new Client()
+      .setEndpoint('https://fra.cloud.appwrite.io/v1')
+      .setProject(PROJECT_ID)
+  database = new Databases(client)
+} else {
+  console.warn('Appwrite environment variables missing. Trending features disabled.')
+}
 export const updateSearchCount = async (searchTerm, movie)=>{
+    if (!database) return;
+    
     try{
         const result = await database.listDocuments(DATABASE_ID, COLLECTION_ID, [
             Query.equal('searchTerm', searchTerm)
@@ -34,6 +41,8 @@ export const updateSearchCount = async (searchTerm, movie)=>{
 }
 
 export const getTrendigMovies = async () =>{
+    if (!database) return [];
+    
     try{
         const result = await database.listDocuments(DATABASE_ID, COLLECTION_ID, [
             Query.limit(10),
@@ -42,5 +51,6 @@ export const getTrendigMovies = async () =>{
         return result.documents;
     } catch(error){
         console.log(error)
+        return [];
     }
 }
