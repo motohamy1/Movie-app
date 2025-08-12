@@ -79,7 +79,7 @@ const App = () => {
       <div className='pattern'/>
       <div className="wrapper">
         <header>
-          <img src="./hero.png" alt="hero" />
+          <img src="/hero.png" alt="hero" />
           <h1>Find <span className='text-gradient'>Movies</span>  you'll enjoy </h1>
           <Search searchTerm={searchTerm} setSearchTerm={setSearchTerm}/>
         </header>
