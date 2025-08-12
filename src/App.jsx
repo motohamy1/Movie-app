@@ -80,7 +80,9 @@ const App = () => {
 
   const loadTrendingMovies = async () =>{
     try{
+      console.log('Loading trending movies...');
       const movies = await getTrendigMovies();
+      console.log('Trending movies loaded:', movies);
       setTrendingMovies(movies || []);
     } catch (error){
       console.error("Error loading trending movies:", error)

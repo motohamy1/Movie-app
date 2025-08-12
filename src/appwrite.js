@@ -6,11 +6,17 @@ const COLLECTION_ID= import.meta.env.VITE_APPWRITE_COLLECTION_ID
 
 let client, database;
 
+console.log('Appwrite Environment Check:');
+console.log('PROJECT_ID:', PROJECT_ID ? 'Present' : 'Missing');
+console.log('DATABASE_ID:', DATABASE_ID ? 'Present' : 'Missing');
+console.log('COLLECTION_ID:', COLLECTION_ID ? 'Present' : 'Missing');
+
 if (PROJECT_ID && DATABASE_ID && COLLECTION_ID) {
   client = new Client()
       .setEndpoint('https://fra.cloud.appwrite.io/v1')
       .setProject(PROJECT_ID)
   database = new Databases(client)
+  console.log('Appwrite client initialized successfully');
 } else {
   console.warn('Appwrite environment variables missing. Trending features disabled.')
 }
@@ -32,6 +38,7 @@ export const updateSearchCount = async (searchTerm, movie)=>{
                 searchTerm,
                 count: 1,
                 movie_id: movie.id,
+                title: movie.title,
                 poster_url: `https://image.tmdb.org/t/p/w500${movie.poster_path}`,
             })
         }
@@ -41,16 +48,24 @@ export const updateSearchCount = async (searchTerm, movie)=>{
 }
 
 export const getTrendigMovies = async () =>{
-    if (!database) return [];
+    console.log('getTrendigMovies called, database available:', !!database);
+    
+    if (!database) {
+        console.log('Database not initialized, returning empty array');
+        return [];
+    }
     
     try{
+        console.log('Fetching documents from Appwrite...');
         const result = await database.listDocuments(DATABASE_ID, COLLECTION_ID, [
             Query.limit(10),
             Query.orderDesc('count')
         ])
+        console.log('Appwrite response:', result);
+        console.log('Documents found:', result.documents?.length || 0);
         return result.documents;
     } catch(error){
-        console.log(error)
+        console.error('Error in getTrendigMovies:', error)
         return [];
     }
 }
