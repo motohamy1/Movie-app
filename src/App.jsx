@@ -62,8 +62,12 @@ const App = () => {
         console.log(data)
 
         setMovieList(data.results || [])
-        if(query && data.results.length > 0){
-          await updateSearchCount(query, data.results[0])
+        if(query && data.results && data.results.length > 0){
+          try {
+            await updateSearchCount(query, data.results[0])
+          } catch (err) {
+            console.error('Error updating search count:', err)
+          }
         }
       } catch(error){
         console.error("Error fetching movies:", error)
@@ -77,10 +81,10 @@ const App = () => {
   const loadTrendingMovies = async () =>{
     try{
       const movies = await getTrendigMovies();
-      setTrendingMovies(movies);
+      setTrendingMovies(movies || []);
     } catch (error){
       console.error("Error loading trending movies:", error)
-      setErrorMessage("Error loading trending movies. Please try again later.")
+      setTrendingMovies([]);
     }
   }
 
@@ -104,14 +108,18 @@ const App = () => {
           <h1>Find <span className='text-gradient'>Movies</span>  you'll enjoy </h1>
           <Search searchTerm={searchTerm} setSearchTerm={setSearchTerm}/>
         </header>
-        { trendingMovies.length > 0 && (
+        { trendingMovies && trendingMovies.length > 0 && (
           <section className="trending">
             <h2>Trending Movies</h2>
             <ul>
               { trendingMovies.map((movie, index) => (
-                <li key={movie.$id}>
+                <li key={movie.$id || index}>
                   <p>{index + 1}</p>
-                  <img src={movie.poster_url} alt={movie.title} />
+                  <img 
+                    src={movie.poster_url} 
+                    alt={movie.title || 'Movie'}
+                    onError={(e) => e.target.style.display = 'none'}
+                  />
                 </li>
               ))}
             </ul>
