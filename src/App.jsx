@@ -1,7 +1,10 @@
 import React from 'react';
 import { useState, useEffect } from 'react';
 
-// Minimal test version
+import Search from './components/Search';
+import Spinner from './components/Spinner';
+import MovieCard from './components/MovieCard'
+import { getTrendigMovies, updateSearchCount } from './appwrite';
 
 const API_BASE_URL = 'https://api.themoviedb.org/3'
 const SEARCH_URL = `${API_BASE_URL}/search/movie`
@@ -20,20 +23,124 @@ headers: {
   }
 };
 const App = () => {
+  console.log('App component rendering...');
+  
+  const[searchTerm,setSearchTerm] = useState('');
+  const[errorMessage, setErrorMessage] = useState('');
+  const[isLoading, setIsLoading] = useState(false);
+  const[movieList, setMovieList] = useState([]);
+  const[trendingMovies, setTrendingMovies] = useState([]);
+  const[debouncedSearchTerm, setDebouncedSearchTerm] = useState('')
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 600);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  const fetchMovies = async(query='')=>{
+    setIsLoading(true)
+    setErrorMessage('')
+
+    if (!API_KEY) {
+      setErrorMessage('API configuration error. Please check environment variables.')
+      setIsLoading(false)
+      return
+    }
+
+      try{
+        const endpoint = query 
+              ? `${SEARCH_URL}?query=${encodeURIComponent(query)}&include_adult=false&language=en-US&page=1`
+              : `${DISCOVER_URL}?include_adult=false&include_video=false&language=en-US&page=1&sort_by=popularity.desc`
+        const response = await fetch(endpoint, options)
+
+        if (!response.ok) {
+          throw new Error("Something went wrong")
+        }
+        const data = await response.json()
+        console.log(data)
+
+        setMovieList(data.results || [])
+        if(query && data.results.length > 0){
+          await updateSearchCount(query, data.results[0])
+        }
+      } catch(error){
+        console.error("Error fetching movies:", error)
+        setErrorMessage("Error fetching movies. Please try again later.")
+
+      } finally{
+        setIsLoading(false)
+      }
+  }
+
+  const loadTrendingMovies = async () =>{
+    try{
+      const movies = await getTrendigMovies();
+      setTrendingMovies(movies);
+    } catch (error){
+      console.error("Error loading trending movies:", error)
+      setErrorMessage("Error loading trending movies. Please try again later.")
+    }
+  }
+
+  useEffect( ()=>{
+    console.log('Fetching movies for term:', debouncedSearchTerm)
+    fetchMovies(debouncedSearchTerm);
+  },[debouncedSearchTerm])
+
+  useEffect(()=>{
+    loadTrendingMovies();
+  },[])
+
+  console.log('About to render, movieList:', movieList.length, 'isLoading:', isLoading);
+  
   return (
-    <div style={{
-      backgroundColor: '#030014',
-      color: 'white',
-      minHeight: '100vh',
-      padding: '20px',
-      fontFamily: 'Arial, sans-serif'
-    }}>
-      <h1 style={{ textAlign: 'center', fontSize: '2rem', marginBottom: '20px' }}>
-        Movie App Working!
-      </h1>
-      <p style={{ textAlign: 'center' }}>Environment: {import.meta.env.MODE}</p>
-      <p style={{ textAlign: 'center' }}>API Key: {API_KEY ? 'Present' : 'Missing'}</p>
-    </div>
+    <main>
+      <div className='pattern'/>
+      <div className="wrapper">
+        <header>
+          <img src="/hero.png" alt="hero" />
+          <h1>Find <span className='text-gradient'>Movies</span>  you'll enjoy </h1>
+          <Search searchTerm={searchTerm} setSearchTerm={setSearchTerm}/>
+        </header>
+        { trendingMovies.length > 0 && (
+          <section className="trending">
+            <h2>Trending Movies</h2>
+            <ul>
+              { trendingMovies.map((movie, index) => (
+                <li key={movie.$id}>
+                  <p>{index + 1}</p>
+                  <img src={movie.poster_url} alt={movie.title} />
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+
+        <section className="all-movies">
+          <h2>all movies</h2>
+          { isLoading ? (
+              <Spinner />
+            ) 
+            : errorMessage ? (
+              <p className='text-red-500'>{errorMessage}</p>
+            ) 
+            : (
+              <ul>
+                {movieList && movieList.length > 0 ? (
+                  movieList.map((movie)=>(
+                    <MovieCard key={movie.id} movie={movie} />
+                  ))
+                ) : (
+                  !isLoading && !errorMessage && <p>No movies found.</p>
+                )}
+              </ul>   
+              )
+          }
+        </section>
+      </div>
+    </main>
   )
 }
 
